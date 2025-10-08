@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:terraforma/ListarPagamentos.dart';
 import 'dart:convert';
 import 'API/Api.dart';
 
 class LancamentoPage extends StatefulWidget {
-  const LancamentoPage({super.key});
+  final int user_id;
+  final String sessionToken;
+
+  const LancamentoPage({super.key, required this.user_id, required this.sessionToken});
 
   @override
   State<LancamentoPage> createState() => _LancamentoPageState();
@@ -12,6 +16,18 @@ class LancamentoPage extends StatefulWidget {
 
 class _LancamentoPageState extends State<LancamentoPage> {
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController idControllerUser_id;
+  late TextEditingController idControllerSessionToken;
+
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    idControllerUser_id = TextEditingController(text: widget.user_id.toString());
+    idControllerSessionToken = TextEditingController(text: widget.sessionToken);
+  }
 
   // Controladores dos inputs
   final TextEditingController idUsuarioCtrl = TextEditingController();
@@ -39,7 +55,7 @@ class _LancamentoPageState extends State<LancamentoPage> {
     try {
       final response = await http.post(Uri.parse(url),
         body: {
-          "id_usuario": idUsuarioCtrl.text,
+          "id_usuario": widget.user_id.toString(),
           "devedor": devedorCtrl.text,
           "pagador": pagadorCtrl.text,
           "descricao": descricaoCtrl.text,
@@ -82,17 +98,12 @@ class _LancamentoPageState extends State<LancamentoPage> {
           child: ListView(
             children: [
               TextFormField(
-                controller: idUsuarioCtrl,
-                decoration: const InputDecoration(labelText: "ID Usuário"),
-                keyboardType: TextInputType.number,
-              ),
-              TextFormField(
                 controller: devedorCtrl,
                 decoration: const InputDecoration(labelText: "Devedor"),
               ),
               TextFormField(
                 controller: pagadorCtrl,
-                decoration: const InputDecoration(labelText: "Pagador"),
+                decoration: const InputDecoration(labelText: "Credor"),
               ),
               TextFormField(
                 controller: descricaoCtrl,
@@ -121,6 +132,10 @@ class _LancamentoPageState extends State<LancamentoPage> {
                 child: loading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text("Cadastrar"),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(onPressed: () {Navigator.push(context, MaterialPageRoute(builder: (c) => ListarPagamentos(user_id: widget.user_id, sessionToken: widget.sessionToken)));  }, child: null,
+
               ),
               const SizedBox(height: 20),
               Text(
