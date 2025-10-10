@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:terraforma/ListarPagamentos.dart';
 import 'dart:convert';
 import 'API/Api.dart';
+import 'package:flutter/services.dart';
+
+
 
 class LancamentoPage extends StatefulWidget {
   final int user_id;
@@ -19,7 +23,10 @@ class _LancamentoPageState extends State<LancamentoPage> {
   late TextEditingController idControllerUser_id;
   late TextEditingController idControllerSessionToken;
 
-
+  final dataMask = MaskTextInputFormatter(
+    mask: '##/##/####',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
   @override
   void initState() {
     // TODO: implement initState
@@ -38,6 +45,16 @@ class _LancamentoPageState extends State<LancamentoPage> {
   final TextEditingController dataLancamentoCtrl = TextEditingController();
   final TextEditingController dataVencimentoCtrl = TextEditingController();
   final TextEditingController dataPagamentoCtrl = TextEditingController();
+
+  String converterParaFormatoApi(String dataDigitada) {
+    try {
+      final partes = dataDigitada.split('/'); // [dd, mm, aaaa]
+      if (partes.length != 3) return dataDigitada;
+      return '${partes[2]}-${partes[1]}-${partes[0]}'; // aaaa-mm-dd
+    } catch (_) {
+      return dataDigitada;
+    }
+  }
 
   bool loading = false;
   String respostaServidor = "";
@@ -60,11 +77,16 @@ class _LancamentoPageState extends State<LancamentoPage> {
           "pagador": pagadorCtrl.text,
           "descricao": descricaoCtrl.text,
           "valor": valorCtrl.text,
-          "data_lancamento": dataLancamentoCtrl.text,
-          "data_vencimento": dataVencimentoCtrl.text,
-          "data_pagamento": dataPagamentoCtrl.text,
+          "data_lancamento": converterParaFormatoApi(dataLancamentoCtrl.text),
+          "data_vencimento": converterParaFormatoApi(dataVencimentoCtrl.text),
+          "data_pagamento": converterParaFormatoApi(dataPagamentoCtrl.text),
         },
       );
+
+      print(response);
+      print(dataLancamentoCtrl);
+      print(dataPagamentoCtrl);
+      print(dataVencimentoCtrl);
 
       if (response.statusCode == 200) {
         var jsonResponse = json.decode(response.body);
@@ -73,11 +95,19 @@ class _LancamentoPageState extends State<LancamentoPage> {
         });
       } else {
         setState(() {
+          print(response);
+          print(dataLancamentoCtrl);
+          print(dataPagamentoCtrl);
+          print(dataVencimentoCtrl);
           respostaServidor = "Erro: ${response.statusCode}";
         });
       }
     } catch (e) {
       setState(() {
+
+        print(dataLancamentoCtrl);
+        print(dataPagamentoCtrl);
+        print(dataVencimentoCtrl);
         respostaServidor = "Erro: $e";
       });
     }
@@ -114,18 +144,11 @@ class _LancamentoPageState extends State<LancamentoPage> {
                 decoration: const InputDecoration(labelText: "Valor"),
                 keyboardType: TextInputType.number,
               ),
-              TextFormField(
-                controller: dataLancamentoCtrl,
-                decoration: const InputDecoration(labelText: "Data Lançamento (AAAA-MM-DD)"),
-              ),
-              TextFormField(
-                controller: dataVencimentoCtrl,
-                decoration: const InputDecoration(labelText: "Data Vencimento (AAAA-MM-DD)"),
-              ),
-              TextFormField(
-                controller: dataPagamentoCtrl,
-                decoration: const InputDecoration(labelText: "Data Pagamento (AAAA-MM-DD)"),
-              ),
+
+              buildFormFieldComMascara('Data de Lançamento: ', dataLancamentoCtrl, dataMask),
+              buildFormFieldComMascara('Data de Lançamento: ', dataVencimentoCtrl, dataMask),
+              buildFormFieldComMascara('Data de Lançamento: ', dataPagamentoCtrl, dataMask),
+
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: loading ? null : enviarLancamento,
@@ -148,4 +171,20 @@ class _LancamentoPageState extends State<LancamentoPage> {
       ),
     );
   }
+}
+Widget buildFormFieldComMascara(
+    String labelText, TextEditingController controller, MaskTextInputFormatter mask) {
+  return TextFormField(
+    controller: controller,
+    inputFormatters: [mask],
+    keyboardType: TextInputType.number,
+    decoration: InputDecoration(
+      labelText: labelText,
+      labelStyle: TextStyle(
+        color: Color.fromRGBO(17, 48, 33, 1),
+        fontFamily: 'RobotoMono',
+      ),
+    ),
+    style: TextStyle(color: Color.fromRGBO(17, 48, 33, 1)),
+  );
 }
